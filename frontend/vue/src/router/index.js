@@ -5,6 +5,7 @@ import Login from '../views/Login.vue'
 import ControlDrone from '../views/ControlDrone.vue'
 import ControlUser from '../views/ControlUser.vue'
 import Analyze from '../views/Analyze.vue'
+import Map from '../views/Map.vue'
 
 const routes = [
   {
@@ -36,6 +37,11 @@ const routes = [
     path: '/analyze',
     name: 'Analyze',
     component: Analyze
+  },
+  {
+    path: '/map',
+    name: 'Map',
+    component: Map
   }
 ]
 

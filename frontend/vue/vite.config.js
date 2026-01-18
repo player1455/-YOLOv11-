@@ -10,9 +10,10 @@ export default defineConfig({
         target: 'http://localhost:8080',
         changeOrigin: true
       },
-      '/predict': {
+      '/flask': {
         target: 'http://localhost:5001',
-        changeOrigin: true
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/flask/, '')
       }
     }
   }

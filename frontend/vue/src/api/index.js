@@ -6,7 +6,7 @@ const api = axios.create({
 })
 
 const flaskApi = axios.create({
-  baseURL: 'http://localhost:5001',
+  baseURL: '/flask',
   timeout: 30000
 })
 
@@ -47,6 +47,18 @@ export const droneApi = {
 export const yoloApi = {
   predict(data) {
     return flaskApi.post('/predict', data)
+  },
+  
+  getImageHistory(params) {
+    return flaskApi.get('/get_image_history', { params })
+  },
+  
+  deleteImage(data) {
+    return flaskApi.post('/delete_image', data)
+  },
+  
+  getLatestImage(userId) {
+    return flaskApi.get(`/latest_image/${userId}`, { responseType: 'blob' })
   }
 }
 
