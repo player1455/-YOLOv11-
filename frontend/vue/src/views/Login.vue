@@ -46,7 +46,7 @@
 </template>
 
 <script>
-import { droneApi } from '../api'
+import { authApi } from '../api'
 
 export default {
   name: 'Login',
@@ -60,6 +60,7 @@ export default {
       registerForm: {
         username: '',
         password: '',
+        userId: '',
         userRole: 'user'
       }
     }
@@ -71,9 +72,25 @@ export default {
         return
       }
       
-      localStorage.setItem('currentUser', this.loginForm.username)
-      this.$message.success('Login successful')
-      this.$router.push('/')
+      try {
+        const response = await authApi.login(this.loginForm)
+        
+        if (response.data.code === 200) {
+          const data = response.data.data
+          // 保存token和用户信息到localStorage
+          localStorage.setItem('token', data.token)
+          localStorage.setItem('currentUser', data.username)
+          localStorage.setItem('userId', data.userId)
+          localStorage.setItem('userRole', data.role)
+          
+          this.$message.success('Login successful')
+          this.$router.push('/')
+        } else {
+          this.$message.error(response.data.message || 'Login failed')
+        }
+      } catch (error) {
+        this.$message.error('Login error: ' + (error.response?.data?.message || error.message))
+      }
     },
     
     async handleRegister() {
@@ -83,21 +100,20 @@ export default {
       }
       
       try {
-        const userId = 'user' + Date.now()
-        const response = await droneApi.createUser({
-          username: this.registerForm.username,
-          userId: userId,
-          userRole: this.registerForm.userRole
-        })
+        // 自动生成userId
+        const userId = this.registerForm.username + Date.now()
+        this.registerForm.userId = userId
+        
+        const response = await authApi.register(this.registerForm)
         
         if (response.data.code === 200) {
           this.$message.success('Registration successful')
           this.activeTab = 'login'
         } else {
-          this.$message.error('Registration failed')
+          this.$message.error(response.data.message || 'Registration failed')
         }
       } catch (error) {
-        this.$message.error('Registration error: ' + error.message)
+        this.$message.error('Registration error: ' + (error.response?.data?.message || error.message))
       }
     }
   }

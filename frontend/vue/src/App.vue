@@ -4,24 +4,29 @@
       <el-header>
         <div class="header-content">
           <h1>YOLO无人机障碍规避系统</h1>
-          <el-menu
-            :default-active="activeIndex"
-            class="el-menu-demo"
-            mode="horizontal"
-            @select="handleSelect"
-          >
-            <el-menu-item index="/">首页</el-menu-item>
-            <el-menu-item index="/flying">实时监控</el-menu-item>
-            <el-menu-item index="/map">GPS地图</el-menu-item>
-            <el-menu-item index="/analyze">数据分析</el-menu-item>
-            <el-sub-menu index="control">
-              <template #title>
-                <span>控制面板</span>
-              </template>
-              <el-menu-item index="/control/drone">无人机控制</el-menu-item>
-              <el-menu-item index="/control/user">用户管理</el-menu-item>
-            </el-sub-menu>
-          </el-menu>
+          <div class="nav-container">
+            <el-menu
+              :default-active="activeIndex"
+              class="el-menu-demo"
+              mode="horizontal"
+              @select="handleSelect"
+            >
+              <el-menu-item index="/">首页</el-menu-item>
+              <el-menu-item index="/flying">实时监控</el-menu-item>
+              <el-menu-item index="/map">GPS地图</el-menu-item>
+              <el-menu-item index="/analyze">数据分析</el-menu-item>
+              <el-sub-menu index="control">
+                <template #title>
+                  <span>控制面板</span>
+                </template>
+                <el-menu-item index="/control/drone">无人机控制</el-menu-item>
+                <el-menu-item index="/control/user">用户管理</el-menu-item>
+              </el-sub-menu>
+            </el-menu>
+            <div class="user-info">
+              <el-button type="danger" @click="logout" style="margin-left: 10px;">登出</el-button>
+            </div>
+          </div>
         </div>
       </el-header>
       <el-main>
@@ -47,6 +52,17 @@ export default {
   methods: {
     handleSelect(key, keyPath) {
       this.$router.push(key)
+    },
+    
+    logout() {
+      // 删除localStorage中的token和用户信息
+      localStorage.removeItem('token')
+      localStorage.removeItem('currentUser')
+      localStorage.removeItem('userId')
+      localStorage.removeItem('userRole')
+      
+      this.$message.success('登出成功')
+      this.$router.push('/login')
     }
   }
 }
@@ -75,6 +91,17 @@ export default {
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
+}
+
+.nav-container {
+  display: flex;
+  align-items: center;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  margin-left: 20px;
 }
 
 .el-header h1 {

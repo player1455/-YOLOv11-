@@ -3,7 +3,7 @@
 """
 无人机登录客户端 - 使用电脑模拟无人机
 功能：
-1. 登录对应的无人机账号（仅校验账号）
+1. 登录对应的无人机账号（使用新的登录接口）
 2. 上传图片到系统
 3. 接受系统指令
 """
@@ -21,19 +21,21 @@ import aiohttp
 import asyncio
 
 class DroneLoginClient:
-    def __init__(self, drone_id, username, base_url="http://localhost:8080/api"):
+    def __init__(self, drone_id, username, password, base_url="http://localhost:8080/api"):
         """初始化无人机登录客户端
         
         Args:
             drone_id: 无人机ID
             username: 无人机用户名
+            password: 无人机密码
             base_url: SpringBoot API基础URL
         """
         self.drone_id = drone_id
         self.username = username
+        self.password = password
         self.base_url = base_url
         self.logged_in = False
-        self.token = "test-token"  # 模拟认证令牌
+        self.token = None  # 从登录接口获取的token
         
         # 线程相关属性
         self.image_queue = queue.Queue(maxsize=20)  # 图片队列，最大20张，增加缓冲区
@@ -48,7 +50,7 @@ class DroneLoginClient:
         print("=" * 30)
     
     def login(self):
-        """登录系统（仅校验账号）
+        """登录系统，使用新的登录接口
         
         Returns:
             bool: 登录是否成功
@@ -56,21 +58,26 @@ class DroneLoginClient:
         print(f"\n[登录] 校验无人机账号 {self.username} (ID: {self.drone_id})")
         
         try:
-            # 简化登录逻辑，直接使用droneInfo接口检查单个无人机是否存在
-            response = requests.post(f"{self.base_url}/droneInfo", json={'userId': self.drone_id, 'token': self.token})
+            # 使用新的登录接口
+            response = requests.post(f"{self.base_url}/login", json={
+                'username': self.username,
+                'password': self.password
+            })
             
             if response.status_code == 200:
                 result = response.json()
                 if result.get("code") == 200:
-                    drone = result.get("data", {})
-                    if drone:
+                    data = result.get("data", {})
+                    token = data.get("token")
+                    if token:
                         print(f"[登录成功] 账号校验通过，无人机 {self.drone_id} 已登录")
                         self.logged_in = True
+                        self.token = token
                         return True
                     else:
-                        print(f"[登录失败] 无人机 {self.drone_id} 不存在")
-                elif result.get("code") == 404:
-                    print(f"[登录失败] 无人机 {self.drone_id} 不存在")
+                        print(f"[登录失败] 服务器返回错误: {result.get('message')}")
+                elif result.get("code") == 401:
+                    print(f"[登录失败] 用户名或密码错误")
                 else:
                     print(f"[登录失败] 服务器返回错误: {result.get('message')}")
             else:
@@ -131,45 +138,45 @@ class DroneLoginClient:
             return None
     
     async def async_send_image(self, image_base64, session):
-            """异步发送图片到系统，优化发送逻辑
+        """异步发送图片到系统，优化发送逻辑
             
-            Args:
-                image_base64: Base64编码的图片数据
-                session: aiohttp客户端会话
-                
-            Returns:
-                None: 不返回结果，提高发送速度
-            """
-            if not self.logged_in:
-                return None
+        Args:
+            image_base64: Base64编码的图片数据
+            session: aiohttp客户端会话
             
-            try:
-                payload = {
-                    "userId": self.drone_id,
-                    "image": f"data:image/jpeg;base64,{image_base64}",
-                    "token": self.token
-                }
-                
-                # 发送请求并处理响应
-                async with session.post(
-                    f"{self.base_url}/upload", 
-                    json=payload, 
-                    timeout=1.0
-                ) as response:
-                    if response.status == 200:
-                        result = await response.json()
-                        data = result.get("data", {})
-                        self.save_prediction_result(data, image_base64)
-                        self.receive_command(data)
+        Returns:
+            None: 不返回结果，提高发送速度
+        """
+        if not self.logged_in:
+            return None
+        
+        try:
+            payload = {
+                "userId": self.drone_id,
+                "image": f"data:image/jpeg;base64,{image_base64}",
+                "token": self.token
+            }
+            
+            # 发送请求并处理响应
+            async with session.post(
+                f"{self.base_url}/upload", 
+                json=payload, 
+                timeout=1.0
+            ) as response:
+                if response.status == 200:
+                    result = await response.json()
+                    data = result.get("data", {})
+                    self.save_prediction_result(data, image_base64)
+                    self.receive_command(data)
                 
                 # 无论成功失败，都递增计数器，用于统计发送速率
                 self.image_counter += 1
-            except Exception as e:
-                # 发生异常，也递增计数器
-                self.image_counter += 1
-                pass
-            
-            return None
+        except Exception as e:
+            # 发生异常，也递增计数器
+            self.image_counter += 1
+            pass
+        
+        return None
     
     def send_image(self, image_base64):
         """同步发送图片到系统（保留原有接口，供其他地方调用）
@@ -413,17 +420,6 @@ class DroneLoginClient:
         """持续发送图片的线程方法，使用异步IO提高发送速度"""
         print(f"[线程启动] 图片发送线程已启动")
         
-        async def async_send_task(image_base64, session):
-            """单个图片发送任务"""
-            if image_base64:
-                result = await self.async_send_image(image_base64, session)
-                if result:
-                    self.receive_command(result)
-        
-    def send_images(self):
-        """持续发送图片的线程方法，使用异步IO提高发送速度"""
-        print(f"[线程启动] 图片发送线程已启动")
-        
         async def async_send_batch(images, session):
             """批量发送图片"""
             if not images:
@@ -565,13 +561,14 @@ def main():
     print("=" * 50)
     
     # 配置
-    drone_id = "drone001"  # 无人机ID
-    username = "drone1"    # 无人机用户名
+    drone_id = "test_drone"  # 无人机ID
+    username = "test_drone_user"    # 无人机用户名
+    password = "test123"  # 无人机密码
     
     # 创建客户端
-    client = DroneLoginClient(drone_id, username)
+    client = DroneLoginClient(drone_id, username, password)
     
-    # 登录（仅校验账号）
+    # 登录（使用新的登录接口）
     if not client.login():
         print(f"\n[结束] 登录失败，程序退出")
         return

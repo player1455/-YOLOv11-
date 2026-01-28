@@ -23,6 +23,9 @@ public class User {
     @Column(name = "user_role", nullable = false)
     private String userRole;
     
+    @Column(name = "password", nullable = false)
+    private String password;
+    
     @Column(name = "creation_date")
     private LocalDateTime creationDate;
     

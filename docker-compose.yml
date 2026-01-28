@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: yolo-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root123456
+      MYSQL_DATABASE: yolo
+      MYSQL_USER: yolo_user
+      MYSQL_PASSWORD: yolo_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - yolo-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  springboot:
+    build:
+      context: ./backend/springboot
+      dockerfile: Dockerfile
+    container_name: yolo-springboot
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/yolo?useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: yolo_user
+      SPRING_DATASOURCE_PASSWORD: yolo_password
+      FLASK_SERVICE_URL: http://flask:5001/predict
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - yolo-network
+    volumes:
+      - ./logs:/var/log/drone-system
+
+  flask:
+    build:
+      context: ./backend/flask
+      dockerfile: Dockerfile
+    container_name: yolo-flask
+    ports:
+      - "5001:5001"
+    environment:
+      FLASK_HOST: 0.0.0.0
+      FLASK_PORT: 5001
+      YOLO_MODEL_PATH: /app/models/best.pt
+    volumes:
+      - ./backend/flask/static:/app/static
+      - ./weights:/app/models
+    networks:
+      - yolo-network
+
+  frontend:
+    build:
+      context: ./frontend/vue
+      dockerfile: Dockerfile
+    container_name: yolo-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - springboot
+      - flask
+    networks:
+      - yolo-network
+
+networks:
+  yolo-network:
+    driver: bridge
+
+volumes:
+  mysql_data:

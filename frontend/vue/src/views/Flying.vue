@@ -142,7 +142,7 @@ export default {
   },
   data() {
     return {
-      userId: this.$route.query.userId || 'drone001',
+      userId: this.$route.query.userId || 'test_drone',
       selectedFile: null,
       imageData: null,
       predicting: false,
@@ -600,31 +600,26 @@ export default {
 .flying {
   padding: 20px;
 }
-
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
-
 .upload-section {
   padding: 20px;
   text-align: center;
 }
-
 .result-section {
   padding: 20px;
   text-align: center;
   position: relative;
 }
-
 .image-container img {
   max-width: 100%;
   max-height: 400px;
   border: 1px solid #ddd;
   border-radius: 4px;
 }
-
 .stream-image {
   transition: opacity 0.1s ease-in-out;
   max-width: 100%;
@@ -633,7 +628,6 @@ export default {
   height: auto;
   object-fit: contain;
 }
-
 .image-info {
   margin-top: 10px;
   display: flex;
@@ -641,18 +635,15 @@ export default {
   font-size: 14px;
   color: #606266;
 }
-
 .placeholder {
   height: 300px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-
 .camera-section {
   text-align: center;
 }
-
 .camera-section video {
   border: 1px solid #ddd;
   border-radius: 4px;
@@ -660,21 +651,18 @@ export default {
   max-height: 300px;
   background-color: #f0f0f0;
 }
-
 .camera-placeholder {
   height: 300px;
   display: flex;
   align-items: center;
   justify-content: center;
   background-color: #f0f0f0;
-  border: 1px dashed #ddd;
+  border:1px dashed #ddd;
   border-radius: 4px;
 }
-
 :deep(.el-tabs__content) {
   margin-top: 10px;
 }
-
 .real-time-indicator {
   margin-top: 10px;
   display: flex;
@@ -682,7 +670,6 @@ export default {
   justify-content: center;
   gap: 10px;
 }
-
 .image-stream-indicator {
   margin-top: 10px;
   display: flex;
@@ -690,18 +677,15 @@ export default {
   justify-content: center;
   gap: 10px;
 }
-
 .fps-info, .play-info {
   font-size: 14px;
   color: #606266;
   font-weight: bold;
 }
-
 /* 实时预测状态下的样式 */
 .real-time-active {
   animation: pulse 1.5s infinite;
 }
-
 @keyframes pulse {
   0% {
     box-shadow: 0 0 0 0 rgba(255, 77, 79, 0.4);

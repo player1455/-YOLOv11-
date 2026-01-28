@@ -17,8 +17,8 @@ CORS(app)
 
 model = YOLO("../../weights/best.pt")
 
-# 图片保存目录
-IMAGE_SAVE_DIR = "../../static/drone_images"
+# 图片保存目录，使用绝对路径确保一致性
+IMAGE_SAVE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "drone_images")
 
 # 确保保存目录存在
 os.makedirs(IMAGE_SAVE_DIR, exist_ok=True)
@@ -31,11 +31,6 @@ cache_lock = threading.Lock()
 latest_image_cache = {}
 # 缓存大小限制
 MAX_CACHE_SIZE = 50
-
-# 视频流队列
-video_streams = {}
-# 视频流锁
-stream_lock = threading.Lock()
 
 def base64_to_image(base64_string):
     if ',' in base64_string:
